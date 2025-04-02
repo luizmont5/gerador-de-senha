@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
+import Slider from '@react-native-community/slider';
 
 const gerarSenha = (tamanho) => {
   const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
@@ -11,35 +12,51 @@ const gerarSenha = (tamanho) => {
 };
 
 const App = () => {
-  const [tamanho, setTamanho] = useState('8');
+  const [tamanho, setTamanho] = useState(8);
   const [senha, setSenha] = useState('');
   const [historico, setHistorico] = useState([]);
+  const [visibilidade, setVisibilidade] = useState({});
 
   const gerarNovaSenha = () => {
-    const novaSenha = gerarSenha(parseInt(tamanho) || 8);
+    const novaSenha = gerarSenha(tamanho);
     setSenha(novaSenha);
-    setHistorico([novaSenha, ...historico]);
+    setHistorico([{ senha: novaSenha, id: Date.now() }, ...historico]);
+  };
+
+  const alternarVisibilidade = (id) => {
+    setVisibilidade((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>🔐 Gerador de Senhas</Text>
-      <TextInput
-        style={styles.input}
-        keyboardType="numeric"
-        placeholder="Tamanho da senha"
+      <Text style={styles.label}>Tamanho da senha: {tamanho}</Text>
+      <Slider
+        style={styles.slider}
+        minimumValue={4}
+        maximumValue={20}
+        step={1}
         value={tamanho}
-        onChangeText={setTamanho}
+        onValueChange={setTamanho}
+        minimumTrackTintColor="#1DB954"
+        maximumTrackTintColor="#fff"
+        thumbTintColor="#1DB954"
       />
       <TouchableOpacity style={styles.button} onPress={gerarNovaSenha}>
         <Text style={styles.buttonText}>Gerar Senha</Text>
       </TouchableOpacity>
-      {senha ? <Text style={styles.senha}>{senha}</Text> : null}
+      {senha ? <Text style={styles.senha}>Senha gerada! Toque para ver no histórico.</Text> : null}
       <Text style={styles.historicoTitle}>📜 Histórico de Senhas:</Text>
       <FlatList
         data={historico}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item }) => <Text style={styles.historicoItem}>{item}</Text>}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <TouchableOpacity onPress={() => alternarVisibilidade(item.id)}>
+            <Text style={styles.historicoItem}>
+              {visibilidade[item.id] ? item.senha : '••••••••'}
+            </Text>
+          </TouchableOpacity>
+        )}
       />
     </View>
   );
@@ -59,16 +76,14 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     color: '#fff',
   },
-  input: {
-    width: '80%',
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#555',
-    borderRadius: 8,
+  label: {
+    fontSize: 18,
+    color: '#fff',
     marginBottom: 10,
-    textAlign: 'center',
-    backgroundColor: '#fff',
-    color: '#000',
+  },
+  slider: {
+    width: '80%',
+    marginBottom: 10,
   },
   button: {
     backgroundColor: '#1DB954',
@@ -96,6 +111,11 @@ const styles = StyleSheet.create({
   historicoItem: {
     fontSize: 16,
     color: '#ccc',
+    marginTop: 5,
+    padding: 10,
+    backgroundColor: '#222',
+    borderRadius: 5,
+    textAlign: 'center',
   },
 });
 
